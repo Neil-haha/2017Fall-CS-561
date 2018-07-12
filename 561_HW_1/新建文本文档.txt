@@ -1,0 +1,334 @@
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+
+
+public class Solution {
+	private static final String SUCCESS = "OK";
+	private static final String FAIL = "FAIL";
+	
+	public static void main(String[] args) {
+		long startTime = System.nanoTime();
+		try (BufferedReader br = new BufferedReader(new FileReader("input.txt"))) {
+			String line = br.readLine();
+			String method = "";
+			char[][] matrix = null;
+			
+			int i = 0, n = 0, p = 0;
+			
+			while(line != null) {
+				if(i == 0) {
+					method = line;
+				} else if (i == 1) {
+					n = Integer.valueOf(line);
+					matrix = new char[n][n];
+				} else if (i == 2) {
+					p = Integer.valueOf(line);
+				} else {
+					for(int j = 0; j < line.length(); j++) {
+						matrix[i - 3][j] = line.charAt(j);
+					}
+				}
+				
+				i++;
+				line = br.readLine();
+			}
+			
+			if(p == 0) {
+				output_success(n, matrix);
+				return;
+			}
+			
+			if(method.equals("DFS")) {
+				boolean[] rows = new boolean[n];
+				if(DFS(matrix, n, p, rows, 0, false)) {
+					output_success(n, matrix);
+				} else {
+					output_fail();
+				}
+			} else if (method.equals("BFS")) {
+				/*
+				List<char[]> rs = BFS(matrix, n, p);
+				if(rs != null) {
+					output_success(n, rs);
+				} else {
+					output_fail();
+				}
+				*/
+			} else {
+				//SA(matrix, n, p);
+			}
+			
+			br.close();
+		} catch (Exception e) {
+			e.printStackTrace(System.out);
+		}
+		
+		long endTime = System.nanoTime();
+		System.out.println("Took "+ (endTime - startTime) / 1000000.0 + " ms"); 
+	}
+	/*
+	private static char[][] BFS(char[][] matrix, int n, int p) {
+		if(p == 0) {
+			return matrix;
+		}
+		
+		if(n == 1 && p == 1) {
+			matrix.get(0)[0] = '1';
+			return matrix;
+		}
+		
+		Deque<List<int[]>> queue = new LinkedList<>();
+		boolean[] flag = new boolean[2 * n];
+		// TODO:
+		// if first row is all '2', it's not working!!!!
+		int row = 0;
+		for(int col = 0; col < n; col++) {
+			if(matrix.get(row)[col] == '0') {
+				flag[0] = true;
+				queue.offer(Arrays.asList(new int[]{row, col}));
+			}
+		}
+		
+		row++;
+		
+		while(!queue.isEmpty()) {
+			int size = queue.size();
+			while(size-- > 0) {
+				List<int[]> cur = queue.poll();
+				for(int[] pos : cur) {
+					matrix.get(pos[0])[pos[1]] = '1';
+				}
+				
+				for(int col = 0; col < n; col++) {
+					if(matrix[row % n][col] == '0') {
+						if(check(matrix, n, row % n, col)) {
+							flag[row] = true;
+							if(cur.size() + 1 == p) {
+								matrix.get(row % n)[col] = '1';
+								return matrix;
+							}
+							List<int[]> next = new ArrayList<>(cur);
+							next.add(new int[]{row % n, col});
+							
+							queue.offer(next);
+						}
+					}
+				}
+				
+				if(row < 2 * n && !flag[row]) {
+					queue.offer(new ArrayList<>(cur));
+				}
+				
+				for(int[] pos : cur) {
+					matrix.get(pos[0])[pos[1]] = '0';
+				}
+			}
+			
+			row++;
+		}
+		
+		return null;
+	}
+	*/
+	
+	private static boolean DFS(char[][] matrix, int n, int p, boolean[] rows, int row, boolean changed) {
+		if(p == 0) {
+			return true;
+		}
+		
+		if(row == n) {
+			if(!changed) {
+				return false;
+			}
+			row = 0;
+			changed = false;
+		}
+		
+		boolean flag = false;	
+		
+		if(!rows[row]) {
+			for(int col = 0; col < n; col++) {
+				if(matrix[row][col] == '0') {
+					if(check(matrix, n, row, col)) {
+						mark(matrix, row, col, rows);
+						unMarkRow(matrix, n, row, rows);
+						if(DFS(matrix, n, p - 1, rows, row + 1, true)) {
+							return true;
+						} else {
+							unMark(matrix, row, col, rows);
+						}
+					}
+					flag = true;
+				}
+			}
+		}
+		
+		if(!flag) {
+			return DFS(matrix, n, p, rows, row + 1, changed);
+		}
+		
+		return false;
+	}
+	
+	
+	private static boolean check(char[][] matrix, int n, int row, int col) {
+		// check row
+		for(int i = col - 1; i >= 0; i--) {
+			if(matrix[row][i] == '1') {
+				return false;
+			} else if (matrix[row][i] == '2') {
+				break;
+			}
+		}
+		
+		for(int i = col + 1; i < n; i++) {
+			if(matrix[row][i] == '1') {
+				return false;
+			} else if (matrix[row][i] == '2') {
+				break;
+			}
+		}
+		
+		// check col
+		for(int i = row - 1; i >= 0; i--) {
+			if(matrix[i][col] == '1') {
+				return false;
+			} else if (matrix[i][col] == '2') {
+				break;
+			}
+		}
+		
+		for(int i = row + 1; i < n; i++) {
+			if(matrix[i][col] == '1') {
+				return false;
+			} else if (matrix[i][col] == '2') {
+				break;
+			}
+		}
+		
+		// check diag
+		int tmp = col + 1;
+		for(int i = row - 1; i >= 0; i--) {
+			if(tmp < n) {
+				if(matrix[i][tmp] == '1') {
+					return false;
+				} else if (matrix[i][tmp] == '2') {
+					break;
+				}
+			} else {
+				break;
+			}
+			tmp++;
+		}
+		
+		tmp = col - 1;
+		for(int i = row + 1; i < n; i++) {
+			if(tmp >= 0) {
+				if(matrix[i][tmp] == '1') {
+					return false;
+				} else if (matrix[i][tmp] == '2') {
+					break;
+				}
+			} else {
+				break;
+			}
+			tmp--;
+		}
+		
+		// check revdiag
+		tmp = col - 1;
+		for(int i = row - 1; i >= 0; i--) {
+			if(tmp >= 0) {
+				if(matrix[i][tmp] == '1') {
+					return false;
+				} else if (matrix[i][tmp] == '2') {
+					break;
+				}
+			} else {
+				break;
+			}
+			tmp--;
+		}
+		
+		tmp = col + 1;
+		for(int i = row + 1; i < n; i++) {
+			if(tmp < n) {
+				if(matrix[i][tmp] == '1') {
+					return false;
+				} else if (matrix[i][tmp] == '2') {
+					break;
+				}
+			} else {
+				break;
+			}
+			tmp++;
+		}
+		
+		return true;
+	}
+	
+	private static void mark(char[][] matrix, int row, int col, boolean[] rows) {
+		matrix[row][col] = '1';
+		rows[row] = true;
+	}
+	
+	private static void unMark(char[][] matrix, int row, int col, boolean[] rows) {
+		matrix[row][col] = '0';
+		rows[row] = false;
+	}
+	
+	private static void unMarkRow(char[][] matrix, int n, int row, boolean[] rows) {
+		for(int j = 0; j < n; j++) {
+			if(matrix[row][j] == '2') {
+				rows[row] = false;
+				break;
+			}
+		}
+	}
+	
+	private static void output_success(int n, char[][] matrix) throws IOException {
+		BufferedWriter out = new BufferedWriter(new FileWriter("output.txt"));
+		out.write(SUCCESS);
+		out.newLine();
+		for(int i = 0; i < n; i++) {
+			out.write(new String(matrix[i]));
+			out.newLine();
+		}
+		out.close();
+	}
+	
+	private static void output_fail() throws IOException {
+		FileWriter fw = new FileWriter("output.txt");
+		fw.write(FAIL);
+		fw.close();
+	}
+	
+	/*
+	private static void mark(List<char[]> matrix, int n, int row, int col, boolean[] rows, boolean[] cols, boolean[] diag, boolean[] revDiag) {
+		matrix.get(row)[col] = '1';
+		rows[row] = true;
+		cols[col] = true;
+		diag[row + col] = true;
+		revDiag[col - row + n - 1] = true;
+	}
+	
+	private static void unMark(List<char[]> matrix, int n, int row, int col, boolean[] rows, boolean[] cols, boolean[] diag, boolean[] revDiag, int num) {
+		matrix.get(row)[col] = (char)(num + '0');
+		rows[row] = false;
+		cols[col] = false;
+		diag[row + col] = false;
+		revDiag[col - row + n - 1] = false;
+	}
+	*/
+}
