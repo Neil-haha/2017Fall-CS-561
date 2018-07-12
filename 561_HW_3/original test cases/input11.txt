@@ -1,0 +1,9 @@
+1
+T(S)
+6
+P(Q,y) | Z(x,E)
+T(x) | ~P(y,x) | ~P(z,q) | ~Z(x,q) | ~Z(z,y)
+P(E,S)
+P(Q,C)
+Z(E,Q)
+Z(Q,E)

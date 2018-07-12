@@ -1,0 +1,18 @@
+2
+~Date(Mary,John)
+Date(Mary,Bill)
+11
+~Buy(x) | Owns(x,y)
+~Buy(x) | Rabbit(y) | Grocery(y)
+Rabbit(y)
+Chase(x,y)
+Buy(Mary)
+~Owns(x,y) | Hates(x,z)
+Dog(x)
+Owns(John,x)
+~Owns(y,z) | ~Hates(x,z) | ~Date(x,y)
+Grocery(G)
+Owns(Mary,G)
+
+*******true********
+*******false********
